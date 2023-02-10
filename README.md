@@ -1,1 +1,1 @@
-sender mail, receiver mail, content, subject, password, website
+# MAIL SENDER API

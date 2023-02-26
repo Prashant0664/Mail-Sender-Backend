@@ -1,52 +1,120 @@
 const nodemailer = require("nodemailer");
 require('dotenv').config();
-const Mailgen = require('mailgen');
+const Job = require('../models/Job');
 
-const sign = async (req, res) => {
+const test = async (req, res) => {
+    
+    try {
+        const date = new Date();
+        const { name, email, day, hour, min, second, month, status, token, cstart } = req.body;
 
-    const {gmail,name,tgmail,content,age,subject,password}=req.body;
-    // console.log({gmail,name,tgmail,content,age,subject,password})
-    let config = {
-        service: "gmail",
-        auth: {
-            user: gmail,
-            pass: password
+        const deff = await Job.findOne({ email: email.mail });
+        try {
+            if (deff) {
+
+            }
+            else {
+
+                const dda = await Job.create({
+                    name: name.name,
+                    email: email.mail,
+                    token: token.token,
+                    id: `${Math.random()}`
+                })
+            }
+        } catch (error) {
+            console.log(error)
+
         }
-    }
-    let transporter = nodemailer.createTransport(config)
-    let Mailgen2 = new Mailgen({
-        theme: "default",
-        product: {
-            name: name,
-            link: "https://github.com/Prashant0664"
+        try {
+            const dde = await Job.updateOne(
+                { email: email.mail },
+                {
+                    $push:
+                    {
+                        starttime: date,
+                        endtime: date,
+                        day: day,
+                        hour: hour,
+                        min: min,
+                        second: second,
+                        month: month,
+                        status: status
+                    }
+                }
+            );
         }
-    })
-    let response = {
-        body: {
-            name: "Gmail User",
-            intro: content,
-            action: {
-                instructions: '<hr><br/>THIS IS JUST FOR EDUCATION PURPOSES ONLY.<br>If you find ths helpful then follow my github account!! to get access to latest projects<br/>Click here to FOLLOW me',
-            button: {
-                color: '#22BC66', // Optional action button color
-                text: 'Click here to FOLLOW me',
-                link: 'https://github.com/Prashant0664'
-            }},
-            outro: "YOU CANNOT SHARE OR COPY THIS PROJECT WITHOUT MY PERMISSION"
+        catch (error) {
+            res.status(404).json({ "err": error })
         }
+        await Job.findOne({ email: email.mail }).then((rest, err) => {
+            if (rest) {
+                res.status(201).send(rest)
+            }
+            else {
+                res.status(404).send(err)
+            }
+        })
     }
-    let msil = Mailgen2.generate(response)
-    let message = {
-        from: process.env.EMAIL,
-        to: tgmail,
-        subject: subject,
-        html: msil,
+    catch (err) {
+        res.status(404).json({ error: err })
     }
-    transporter.sendMail(message).then(() => {
-        return res.status(201).json({ datas:"MAIL SENT SUCCESSFULLY"})
-    }).catch((err) => {
-        return res.status(201).json({ ERROR: "SOMETHING WENT WRONG! PLEASE RECHECK YOUR CREDENTIALS" })
-    })
 }
 
-module.exports = { sign };
+const getdata = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const data = await Job.findOne({ email: email })
+        const arr = data.starttime
+        res.status(201).json({ arrey: arr })
+    }
+    catch (err) {
+        res.status(404).json({ "err": err })
+    }
+}
+
+const send = async (req, res) => {
+    const { email, est1, est2, in1, in2 } = req.body
+    try {
+        var arr = [];
+        const data = await Job.findOne({ email: email })
+        data.status = [true, false, false, false]
+        for (let i = 0; i < in1; i++) {
+            arr.push(data.starttime[i])
+        }
+        for (let i = in2 + 1; i < data.starttime.length; i++) {
+            arr.push(data.starttime[i])
+        }
+        data.starttime = arr
+        await data.save()
+        res.status(201).json({ "succ": "success" })
+    }
+    catch (err) {
+        res.status(404).json({ error: err })
+    }
+}
+const change = async (req, res) => {
+    const { i, j, start, end, in1, in2, email } = req.body;
+    try {
+        var data = await Job.findOne({ email: email });
+        var arr = [];
+        for (let k = 0; k < i; k++) {
+            arr.push(data.starttime[i])
+        }
+        arr.push(new Date(start))
+        arr.push(new Date(end))
+        for (let k = j + 1; k < data.starttime.length; k++) {
+            arr.push(data.starttime[k])
+        }
+        data.starttime = arr
+        await data.save();
+        res.status(201).json({ "data": "data" })
+    }
+    catch (err) {
+        console.log(err);
+        res.status(404).json({ error: err })
+    }
+}
+
+
+module.exports = { test, send, getdata, change };
